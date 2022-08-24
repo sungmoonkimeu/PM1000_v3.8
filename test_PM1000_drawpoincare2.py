@@ -109,11 +109,53 @@ def PM1000_readStocks1(my_Novoptel):
     S1 = (my_Novoptel.readpm(matlab.double([512+12]))-2**15)/1000
     S2 = (my_Novoptel.readpm(matlab.double([512+14]))-2**15)/1000
     S3 = (my_Novoptel.readpm(matlab.double([512+16]))-2**15)/1000
+    # print(S1, S2, S3)
+    # graph = ax.scatter(S1, S2, S3)
+    return S1, S2, S3
+
+def PM1000_readStocks2(my_Novoptel):
+
+    # rdaddrIn = matlab.uint16([3], size=(1, 1))
+    # addrstartIn = matlab.uint16([3], size=(1, 1))
+    # addrstopIn = matlab.uint16([13], size=(1, 1))
+    # wraddrIn = matlab.uint16([3], size=(1, 1))
+
+    # rdaddrIn = matlab.uint16([0])
+    # addrstartIn = matlab.uint16([0])
+    # addrstopIn = matlab.double([127])
+    ndata = 128
+    rdaddrIn = matlab.double([0])
+    addrstartIn = matlab.double([0])
+    addrstopIn = matlab.double([ndata-1])
+    wraddrIn1 = matlab.double([512 + 24])
+    wraddrIn2 = matlab.double([512 + 25])
+    wraddrIn3 = matlab.double([512 + 26])
+    wraddrIn4 = matlab.double([512 + 27])
+
+
+    S0, S1, S2, S3 = [], [], [], []
+
+    for i in range(10):
+        addrstartIn = matlab.double([ndata*i])
+        addrstopIn = matlab.double([ndata*(i+1) - 1])
+        dout1Out, OKOut1 = my_Novoptel.readburstpm(rdaddrIn, addrstartIn, addrstopIn, wraddrIn1, nargout=2)
+        dout2Out, OKOut2 = my_Novoptel.readburstpm(rdaddrIn, addrstartIn, addrstopIn, wraddrIn2, nargout=2)
+        dout3Out, OKOut3 = my_Novoptel.readburstpm(rdaddrIn, addrstartIn, addrstopIn, wraddrIn3, nargout=2)
+        dout4Out, OKOut4 = my_Novoptel.readburstpm(rdaddrIn, addrstartIn, addrstopIn, wraddrIn4, nargout=2)
+
+        if OKOut1 == 1:
+            S0 = np.append(S0, np.array((dout1Out[0]-2**15)))
+        if OKOut2 == 1:
+            S1 = np.append(S1, np.array((dout2Out[0]-2**15)))
+        if OKOut3 == 1:
+            S2 = np.append(S2, np.array((dout3Out[0]-2**15)))
+        if OKOut4 == 1:
+            S3 = np.append(S3, np.array((dout4Out[0]-2**15)))
 
 
     # print(S1, S2, S3)
     # graph = ax.scatter(S1, S2, S3)
-    return S1, S2, S3
+    return S0, S1, S2, S3
 
 def PM1000_close(my_Novoptel):
     ########## PM 1000 Disconnection  ##############
@@ -124,7 +166,7 @@ def PM1000_close(my_Novoptel):
     my_Novoptel.terminate()
 
 def update_graph(num, a, my_Novoptel):
-    global S1, S2, S3
+    global S0, S1, S2, S3
     # S1, S2, S3 = a[0][num], a[1][num], a[2][num]
     #print(a[0][num])
 
@@ -133,7 +175,7 @@ def update_graph(num, a, my_Novoptel):
     # ell = np.random.rand(1) * pi
     # S.general_azimuth_ellipticity(azimuth=azi, ellipticity=ell)
     for i in range(1):
-        tmpS1, tmpS2, tmpS3 = PM1000_readStocks1(my_Novoptel)
+        tmpS0, tmpS1, tmpS2, tmpS3 = PM1000_readStocks2(my_Novoptel)
         S1 = np.append(S1, tmpS1)
         S2 = np.append(S2, tmpS2)
         S3 = np.append(S3, tmpS3)
@@ -168,13 +210,12 @@ if (__name__ == "__main__"):
     #                                          interval=10, blit=False)
 
     graph,  = ax.plot(S1, S2, S3, linestyle="", marker="o", markersize=3)
-    # ani = matplotlib.animation.FuncAnimation(fig, update_graph, fargs=(a, my_Novoptel),
-    #                                           interval=10, blit=True)
+    ani = matplotlib.animation.FuncAnimation(fig, update_graph, fargs=(a, my_Novoptel),
+                                               interval=50, blit=True)
+    plt.show()
+    # for i in range(1000):
+    #     update_graph(0, a, my_Novoptel)
 
-    for i in range(1000):
-        update_graph(0, a, my_Novoptel)
 
-
-    # plt.show()
     S1,S2, S3 = [], [], []
     PM1000_close(my_Novoptel)
