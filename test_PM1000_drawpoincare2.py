@@ -128,9 +128,9 @@ def PM1000_readStocks2(my_Novoptel):
     addrstartIn = matlab.double([0])
     addrstopIn = matlab.double([ndata-1])
     wraddrIn1 = matlab.double([512 + 24])
-    wraddrIn2 = matlab.double([512 + 25])
-    wraddrIn3 = matlab.double([512 + 26])
-    wraddrIn4 = matlab.double([512 + 27])
+    wraddrIn2 = matlab.double([512 + 12])
+    wraddrIn3 = matlab.double([512 + 14])
+    wraddrIn4 = matlab.double([512 + 16])
 
 
     S0, S1, S2, S3 = [], [], [], []
@@ -144,13 +144,13 @@ def PM1000_readStocks2(my_Novoptel):
         dout4Out, OKOut4 = my_Novoptel.readburstpm(rdaddrIn, addrstartIn, addrstopIn, wraddrIn4, nargout=2)
 
         if OKOut1 == 1:
-            S0 = np.append(S0, np.array((dout1Out[0]-2**15)))
+            S0 = np.append(S0, (np.array(dout1Out[0])-2**15))
         if OKOut2 == 1:
-            S1 = np.append(S1, np.array((dout2Out[0]-2**15)))
+            S1 = np.append(S1, (np.array(dout2Out[0])-2**15)/1000)
         if OKOut3 == 1:
-            S2 = np.append(S2, np.array((dout3Out[0]-2**15)))
+            S2 = np.append(S2, (np.array(dout3Out[0])-2**15)/1000)
         if OKOut4 == 1:
-            S3 = np.append(S3, np.array((dout4Out[0]-2**15)))
+            S3 = np.append(S3, (np.array(dout4Out[0])-2**15)/1000)
 
 
     # print(S1, S2, S3)
@@ -185,9 +185,9 @@ def update_graph(num, a, my_Novoptel):
     # S2 = np.append(S2, tmpS2)
     # S3 = np.append(S3, tmpS3)
 
-    S1 = S1[-1000:]
-    S2 = S2[-1000:]
-    S3 = S3[-1000:]
+    S1 = S1[-2000:]
+    S2 = S2[-2000:]
+    S3 = S3[-2000:]
     #graph._offsets3d = (S1, S2, S3)
     graph.set_data(S1, S2)
     graph.set_3d_properties(S3)
@@ -211,7 +211,7 @@ if (__name__ == "__main__"):
 
     graph,  = ax.plot(S1, S2, S3, linestyle="", marker="o", markersize=3)
     ani = matplotlib.animation.FuncAnimation(fig, update_graph, fargs=(a, my_Novoptel),
-                                               interval=50, blit=True)
+                                               interval=100, blit=True)
     plt.show()
     # for i in range(1000):
     #     update_graph(0, a, my_Novoptel)
