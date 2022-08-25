@@ -3,6 +3,7 @@ from numpy import pi
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.animation
+import time
 
 ##### Library for PM1000 #####
 import ftd3xx as ftd3
@@ -123,7 +124,7 @@ def PM1000_readStocks2(my_Novoptel):
     # rdaddrIn = matlab.uint16([0])
     # addrstartIn = matlab.uint16([0])
     # addrstopIn = matlab.double([127])
-    ndata = 128
+    ndata = 512
     rdaddrIn = matlab.double([0])
     addrstartIn = matlab.double([0])
     addrstopIn = matlab.double([ndata-1])
@@ -135,13 +136,18 @@ def PM1000_readStocks2(my_Novoptel):
 
     S0, S1, S2, S3 = [], [], [], []
 
+    start_time = time.time()
     for i in range(10):
         addrstartIn = matlab.double([ndata*i])
         addrstopIn = matlab.double([ndata*(i+1) - 1])
+
+        start_time = time.time()
         dout1Out, OKOut1 = my_Novoptel.readburstpm(rdaddrIn, addrstartIn, addrstopIn, wraddrIn1, nargout=2)
+        print("Data reading time is %s seconds" % (time.time() - start_time))
         dout2Out, OKOut2 = my_Novoptel.readburstpm(rdaddrIn, addrstartIn, addrstopIn, wraddrIn2, nargout=2)
         dout3Out, OKOut3 = my_Novoptel.readburstpm(rdaddrIn, addrstartIn, addrstopIn, wraddrIn3, nargout=2)
         dout4Out, OKOut4 = my_Novoptel.readburstpm(rdaddrIn, addrstartIn, addrstopIn, wraddrIn4, nargout=2)
+        print("Data reading time is %s seconds" % (time.time() - start_time))
 
         if OKOut1 == 1:
             S0 = np.append(S0, (np.array(dout1Out[0])-2**15))
@@ -152,6 +158,7 @@ def PM1000_readStocks2(my_Novoptel):
         if OKOut4 == 1:
             S3 = np.append(S3, (np.array(dout4Out[0])-2**15)/1000)
 
+    print("Data reading time is %s seconds" % (time.time() - start_time))
 
     # print(S1, S2, S3)
     # graph = ax.scatter(S1, S2, S3)
@@ -185,9 +192,9 @@ def update_graph(num, a, my_Novoptel):
     # S2 = np.append(S2, tmpS2)
     # S3 = np.append(S3, tmpS3)
 
-    S1 = S1[-2000:]
-    S2 = S2[-2000:]
-    S3 = S3[-2000:]
+    S1 = S1[-500:]
+    S2 = S2[-500:]
+    S3 = S3[-500:]
     #graph._offsets3d = (S1, S2, S3)
     graph.set_data(S1, S2)
     graph.set_3d_properties(S3)
@@ -198,6 +205,14 @@ if (__name__ == "__main__"):
 
     my_Novoptel = Python_USB.initialize()
     PM1000_connection(my_Novoptel)
+    isATEsetOK = my_Novoptel.writepm(matlab.double([512+1]), matlab.double([10]))
+
+    curATE = int(my_Novoptel.readpm(matlab.double([512 + 1])))
+    print("current ATE is %d" % curATE)
+    print("Sampling time is %.3f us" % (2**curATE*1e-8*1e6))
+    print("Sampling frequency is %.0f S/s" % (1/(2**curATE*1e-8)))
+
+    print("expected sampling time is %.3f ms" % (2**curATE*1e-8*1e6 * 512 *1 /1000))
     # S1, S2, S3 = PM1000_readStocks1(my_Novoptel)
     global a
     a = []
@@ -211,11 +226,46 @@ if (__name__ == "__main__"):
 
     graph,  = ax.plot(S1, S2, S3, linestyle="", marker="o", markersize=3)
     ani = matplotlib.animation.FuncAnimation(fig, update_graph, fargs=(a, my_Novoptel),
-                                               interval=100, blit=True)
+                                               interval=20, blit=True)
     plt.show()
     # for i in range(1000):
     #     update_graph(0, a, my_Novoptel)
 
 
     S1,S2, S3 = [], [], []
+    PM1000_close(my_Novoptel)
+
+
+
+    ### testing script for estimating time
+    my_Novoptel = Python_USB.initialize()
+    PM1000_connection(my_Novoptel)
+    isATEsetOK = my_Novoptel.writepm(matlab.double([512 + 1]), matlab.double([20]))
+    curATE = int(my_Novoptel.readpm(matlab.double([512 + 1])))
+    print("current ATE is %d" % curATE)
+    print("Sampling time is %.3f us" % (2 ** curATE * 1e-8 * 1e6))
+    print("Sampling frequency is %.0f S/s" % (1 / (2 ** curATE * 1e-8)))
+
+    ndata = 512
+    print("expected sampling time for %.0f is %.3f ms" % (ndata, 2 ** curATE * 1e-8 * 1e6 * ndata * 1 / 1000))
+    rdaddrIn = matlab.double([0])
+    addrstartIn = matlab.double([0])
+    addrstopIn = matlab.double([ndata - 1])
+    wraddrIn1 = matlab.double([512 + 24])
+    wraddrIn2 = matlab.double([512 + 12])
+    wraddrIn3 = matlab.double([512 + 14])
+    wraddrIn4 = matlab.double([512 + 16])
+
+    for i in range(5):
+        addrstartIn = matlab.double([ndata * i])
+        addrstopIn = matlab.double([ndata * (i + 1) - 1])
+        start_time = time.time()
+        dout1Out, OKOut1 = my_Novoptel.readburstpm(rdaddrIn, addrstartIn, addrstopIn, wraddrIn1, nargout=2)
+        print("reading time for %.0f sample is %s seconds" % (ndata, time.time() - start_time))
+
+    for i in range(5):
+        start_time = time.time()
+        S1 = (my_Novoptel.readpm(matlab.double([512 + 12])) - 2 ** 15) / 1000
+        print("reading time for single sample is %s seconds" % (time.time() - start_time))
+
     PM1000_close(my_Novoptel)

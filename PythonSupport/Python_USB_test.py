@@ -90,23 +90,6 @@ oc.addpath('..\\COM');
 # 
 # None of this is needed unless one subsequently wants to use the Python package Python_USB
 
-stri = input('Select EPC1000 device (0) or look it up in LastDevEPC.mat (1 or "enter"):')
-if stri=='0':
-    oc.initepc(0)
-else:
-    oc.initepc()
-# oc.load('LastDevEPC.mat', 'LastDevDescr') is a dictionary. We read the element 'LastDevDescr'.
-DevDescrEPC = oc.load('LastDevEPC.mat', 'LastDevDescr')['LastDevDescr']
-print(DevDescrEPC) 
-    
-stri = input('Select EPS1000 device (0) or look it up in LastDevEPS.mat (1 or "enter"):')
-if stri=='0':
-    oc.initeps(0)
-else:
-    oc.initeps()
-# oc.load('LastDevEPS.mat', 'LastDevDescr') is a dictionary. We read the element 'LastDevDescr'.
-DevDescrEPS = oc.load('LastDevEPS.mat', 'LastDevDescr')['LastDevDescr']
-print(DevDescrEPS) 
     
 stri = input('Select PM1000 device (0) or look it up in LastDevPM.mat (1 or "enter"):')
 if stri=='0':
