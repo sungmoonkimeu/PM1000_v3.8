@@ -45,29 +45,26 @@ sthread = ServerThread()
 
 # Keep updating the drawing
 S0, S1, S2, S3 = [], [], [], []
+
+graph, = 
+
 while True:
     #Wait forever until new data_available event is raised
     data_available.wait()
     # Plot the latest data-set received.
-    # print(np.array(received_data).shape)
-    # S0 = np.hstack((S0, received_data[-1][0:127]))
-    # S1 = np.hstack((S1, received_data[-1][128:128*2-1]))
-    # S2 = np.hstack((S2, received_data[-1][128*2:128*3-1]))
-    # S3 = np.hstack((S3, received_data[-1][128*3:128*4-1]))
-    #now = time.time()
-    tmpdata = np.array(received_data)   # ~1ms
-    #print("Elapsed %f" % (time.time() - now))
 
-    ndata = 32*10
-    if tmpdata.size >  ndata*4 :    # ~1ms
-        tS0 = tmpdata[:, 0:ndata-1]
-        S0 = np.hstack((S0,tS0.reshape(tS0.size)))
-        tS1 = tmpdata[:, ndata:ndata*2-1]
-        S1 = np.hstack((S1,tS1.reshape(tS1.size)))
-        tS2 = tmpdata[:, ndata*2:ndata*3-1]
-        S2 = np.hstack((S2,tS2.reshape(tS2.size)))
+    tmpdata = np.array(received_data)  # ~1ms
+
+    ndata = 32 * 10
+    if tmpdata.size > ndata * 4:  # ~1ms
+        tS0 = tmpdata[:, 0:ndata - 1]
+        S0 = np.hstack((S0, tS0.reshape(tS0.size)))
+        tS1 = tmpdata[:, ndata:ndata * 2 - 1]
+        S1 = np.hstack((S1, tS1.reshape(tS1.size)))
+        tS2 = tmpdata[:, ndata * 2:ndata * 3 - 1]
+        S2 = np.hstack((S2, tS2.reshape(tS2.size)))
         tS3 = tmpdata[:, ndata * 3:ndata * 4 - 1]
-        S3 = np.hstack((S3,tS3.reshape(tS3.size)))
+        S3 = np.hstack((S3, tS3.reshape(tS3.size)))
     # now = time.time()
     # print("Elapsed %f" % (time.time() - now))
     ndata_show = 500

@@ -24,4 +24,6 @@ class OctaveThread(threading.Thread):
         # when using 'eval' any variables are available within the next script as well
         # execute my_octave_script.m which has an endless loop and will never return
         octave.eval('initpm')
+        octave.eval('initpm2')
+
         octave.eval('my_octave_script2')

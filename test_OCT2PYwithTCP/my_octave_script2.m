@@ -10,14 +10,18 @@ while(1);
     S2 = [];
     S3 = [];
 
-    pause (0.005) % simulate the execution time your script needs
+    pause (0.001) % simulate the execution time your script needs
     % randdata = rand(1,100); % some random data to send
-    ndata = 128;
-    for i =1:100
-        [tS0 OK0] = readburstpm(0, 0, ndata-1, 512+24);
-        [tS1 OK1] = readburstpm(0, 0, ndata-1, 512+25);
-        [tS2 OK2] = readburstpm(0, 0, ndata-1, 512+26);
-        [tS3 OK3] = readburstpm(0, 0, ndata-1, 512+27);
+%    tic()
+
+    ndata = 32;
+
+    for i =0:9
+        [tS0 OK0] = readburstpm(0, ndata*i, ndata*(i+1)-1, 512+24);
+        [tS1 OK1] = readburstpm(0, ndata*i, ndata*(i+1)-1, 512+25);
+        [tS2 OK2] = readburstpm(0, ndata*i, ndata*(i+1)-1, 512+26);
+        [tS3 OK3] = readburstpm(0, ndata*i, ndata*(i+1)-1, 512+27);
+
         if OK0*OK1*OK2*OK3 == 1
             S0 = [S0 tS0];
             S1 = [S1 tS1];
@@ -27,8 +31,7 @@ while(1);
     end
     S= [S0 S1 S2 S3];
 
-    % tic()
     tcpcli = tcpclient("127.0.0.1", 9999);
     write(tcpcli, toJSON(S));
-    % toc()
+%    toc()
 end
