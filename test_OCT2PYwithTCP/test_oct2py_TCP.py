@@ -36,9 +36,6 @@ def dataclear():
     received_data.clear()
 
 
-def update_graph(i):
-    line.set_ydata(data)
-
 # Start the threads
 othread = octavethread.OctaveThread()
 sthread = ServerThread()
