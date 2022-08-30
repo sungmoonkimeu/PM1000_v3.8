@@ -16,7 +16,7 @@ print("initialization has completed")
 
 
 # Read S3 sign setting of PM1000:
-S3sign, okOut = my_Novoptel.readpm(matlab.double([512+45]), nargout=2)
+S3sign, okOut = my_Novoptel.readpm(matlab.double([512+24]), nargout=2)
 print(S3sign, okOut, sep='\n')
 
 
