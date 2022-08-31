@@ -11,41 +11,6 @@ import socketserver
 import octavethread
 
 import random
-## fractional bit to floating decimal
-def binaryToDecimal(binary, length):
-    # Fetch the radix point
-    point = binary.find('.')
-
-    # Update point if not found
-    if (point == -1):
-        point = length
-
-    intDecimal = 0
-    fracDecimal = 0
-    twos = 1
-
-    # Convert integral part of binary
-    # to decimal equivalent
-    for i in range(point - 1, -1, -1):
-        # Subtract '0' to convert
-        # character into integer
-        intDecimal += ((ord(binary[i]) -
-                        ord('0')) * twos)
-        twos *= 2
-
-    # Convert fractional part of binary
-    # to decimal equivalent
-    twos = 2
-
-    for i in range(point + 1, length):
-        fracDecimal += ((ord(binary[i]) -
-                         ord('0')) / twos);
-        twos *= 2.0
-
-    # Add both integral and fractional part
-    ans = intDecimal + fracDecimal
-
-    return ans
 
 ## Run server : receving data from PM1000
 
@@ -74,7 +39,7 @@ def datacallback(data):
     received_data.append(data) #copy the data
     data_available.set() #raise event
 
-def dataclear():
+def buffer_clear():
     received_data.clear()
 
 # Start the threads
@@ -92,7 +57,7 @@ class App(tk.Frame):
         self.ani = None
 
         btns = tk.Frame(self)
-        btns.pack()
+        btns.pack(side=tk.BOTTOM)
 
         lbl = tk.Label(btns, text="Number of times to run")
         lbl.pack(side=tk.LEFT)
@@ -112,11 +77,19 @@ class App(tk.Frame):
         self.btn.pack(side=tk.LEFT)
 
         self.fig = plt.Figure()
-        self.ax0 = self.fig.add_subplot(411)
-        self.ax1 = self.fig.add_subplot(412)
-        self.ax2 = self.fig.add_subplot(413)
-        self.ax3 = self.fig.add_subplot(414)
-        self.line0, = self.ax0.plot([], [], lw=2)
+        # self.ax0 = self.fig.add_subplot(411)
+        # self.ax1 = self.fig.add_subplot(412)
+        # self.ax2 = self.fig.add_subplot(413)
+        # self.ax3 = self.fig.add_subplot(414)
+        # self.line0, = self.ax0.plot([], [], lw=2)
+        # self.line1, = self.ax1.plot([], [], lw=2)
+        # self.line2, = self.ax2.plot([], [], lw=2)
+        # self.line3, = self.ax3.plot([], [], lw=2)
+
+        self.ax1 = self.fig.add_subplot(311)
+        self.ax2 = self.fig.add_subplot(312)
+        self.ax3 = self.fig.add_subplot(313)
+
         self.line1, = self.ax1.plot([], [], lw=2)
         self.line2, = self.ax2.plot([], [], lw=2)
         self.line3, = self.ax3.plot([], [], lw=2)
@@ -125,10 +98,12 @@ class App(tk.Frame):
         self.canvas.draw()
         self.canvas.get_tk_widget().pack()
 
-        self.maxS = 65535
-        self.minS = 0
-        self.ax0.set_ylim(self.minS, self.maxS)
-        self.ax0.set_xlim(0, 500)
+        # self.maxS = 65535
+        # self.minS = 0
+        self.maxS = 1
+        self.minS = -1
+        # self.ax0.set_ylim(0, self.maxS)
+        # self.ax0.set_xlim(0, 500)
         self.ax1.set_ylim(self.minS, self.maxS)
         self.ax1.set_xlim(0, 500)
         self.ax2.set_ylim(self.minS, self.maxS)
@@ -136,11 +111,13 @@ class App(tk.Frame):
         self.ax3.set_ylim(self.minS, self.maxS)
         self.ax3.set_xlim(0, 500)
 
-        self.S0 = []
+        # self.S0 = []
         self.S1 = []
         self.S2 = []
         self.S3 = []
         self.t = []
+        self.S0 = 0
+        self.DOP = 0
 
     def on_click(self):
         '''the button is a start, pause and unpause button all in one
@@ -178,13 +155,15 @@ class App(tk.Frame):
 
     def update_graph(self, i):
         self.get_data()
+        #self.points_ent.insert(0, str(self.S0)+"dBm")
         #self.line0.set_data(*get_data()) # update graph
-        self.line0.set_data(self.t, self.S0)  # update graph
+        #self.line0.set_data(self.t, self.S0)  # update graph
         self.line1.set_data(self.t, self.S1)  # update graph
         self.line2.set_data(self.t, self.S2)  # update graph
         self.line3.set_data(self.t, self.S3)  # update graph
 
-        return self.line0, self.line1, self.line2, self.line3
+        # return self.line0, self.line1, self.line2, self.line3
+        return self.line1, self.line2, self.line3
 
     def get_data(self):
         '''replace this function with whatever you want to provide the data
@@ -200,26 +179,32 @@ class App(tk.Frame):
         ndata = 32 * 10
         if tmpdata.size > ndata * 4:  # ~1ms
             # print("comecome")
-            tS0 = tmpdata[:, 0:ndata - 1]
-            self.S0 = np.hstack((self.S0, tS0.reshape(tS0.size)))
-            tS1 = tmpdata[:, ndata:ndata * 2 - 1]
+            # tS0 = tmpdata[:, 0:ndata - 1]
+            # self.S0 = np.hstack((self.S0, tS0.reshape(tS0.size)))
+            tS1 = tmpdata[:, 0:ndata - 1]
             self.S1 = np.hstack((self.S1, tS1.reshape(tS1.size)))
-            tS2 = tmpdata[:, ndata * 2:ndata * 3 - 1]
+            tS2 = tmpdata[:, ndata:ndata * 2 - 1]
             self.S2 = np.hstack((self.S2, tS2.reshape(tS2.size)))
-            tS3 = tmpdata[:, ndata * 3:ndata * 4 - 1]
+            tS3 = tmpdata[:, ndata * 2:ndata * 3 - 1]
             self.S3 = np.hstack((self.S3, tS3.reshape(tS3.size)))
 
+            tS0 = tmpdata[:, -2]
+            tDOP = tmpdata[:, -2]
             # now = time.time()
             # print("Elapsed %f" % (time.time() - now))
             ndata_show = 500
             nstep = 1
-            self.S0 = self.S0[-ndata_show::nstep]
+            # self.S0 = self.S0[-ndata_show::nstep]
             self.S1 = self.S1[-ndata_show::nstep]
             self.S2 = self.S2[-ndata_show::nstep]
             self.S3 = self.S3[-ndata_show::nstep]
-            self.t = np.arange(0, len(self.S0), 1)
 
-            dataclear()
+            self.S0 = np.mean(tS0)
+            self.DOP = np.mean(tDOP)
+
+            self.t = np.arange(0, len(self.S1), 1)
+
+            buffer_clear()
         data_available.clear()
         # return S0, S1, S2, S3
         # print("|xx")
