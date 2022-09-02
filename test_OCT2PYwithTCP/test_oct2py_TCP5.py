@@ -52,6 +52,46 @@ sthread = ServerThread()
 ################ Run server end ###################
 ###################################################
 
+class Spinbox(tk.Spinbox):
+    def __init__(self, *args, **kwargs):
+        tk.Spinbox.__init__(self, *args, **kwargs)
+        self.bind('<MouseWheel>', self.mouseWheel)
+        self.bind('<Button-4>', self.mouseWheel)
+        self.bind('<Button-5>', self.mouseWheel)
+        self.bind('<Shift-MouseWheel>', self.shiftmouseWheel)
+
+    def mouseWheel(self, event):
+        if event.num == 5 or event.delta == -120:
+            self.invoke('buttondown')
+
+        elif event.num == 4 or event.delta == 120:
+            self.invoke('buttonup')
+
+    def shiftmouseWheel(self, event):
+        if event.num == 5 or event.delta == -120:
+            self.invoke('buttondown')
+            self.invoke('buttondown')
+            self.invoke('buttondown')
+            self.invoke('buttondown')
+            self.invoke('buttondown')
+            self.invoke('buttondown')
+            self.invoke('buttondown')
+            self.invoke('buttondown')
+            self.invoke('buttondown')
+            self.invoke('buttondown')
+
+        elif event.num == 4 or event.delta == 120:
+            self.invoke('buttonup')
+            self.invoke('buttonup')
+            self.invoke('buttonup')
+            self.invoke('buttonup')
+            self.invoke('buttonup')
+            self.invoke('buttonup')
+            self.invoke('buttonup')
+            self.invoke('buttonup')
+            self.invoke('buttonup')
+            self.invoke('buttonup')
+
 class App(tk.Frame):
     def __init__(self, master=None, **kwargs):
         tk.Frame.__init__(self, master, **kwargs)
@@ -189,9 +229,14 @@ class App(tk.Frame):
         lbl = tk.Label(frm1_1, text='Ical (kA)')
         lbl.grid(row=3, column=1)
 
-        self.inputSOP_ent = tk.Entry(frm1_1, width=8, justify='right')
-        self.inputSOP_ent.insert(0, '1')
-        self.inputSOP_ent.grid(row=1, column=2)
+        #self.inputSOP_sb = tk.Entry(frm1_1, width=8, justify='right')
+
+        # self.inputSOP_sb = tk.Spinbox(frm1_1, width=8, from_=0, to=360, validate='all',
+        #                               validatecommand=validate_command,
+        #                               invalidcommand=invalid_command)
+        self.inputSOP_sb = Spinbox(frm1_1, width=8, from_=0, to=360, increment=0.5,
+                                   wrap=True, state='readonly', justify='right')
+        self.inputSOP_sb.grid(row=1, column=2)
 
         self.deltaSOP_ent = tk.Entry(frm1_1, width=8, justify='right')
         self.deltaSOP_ent.insert(0, '1')

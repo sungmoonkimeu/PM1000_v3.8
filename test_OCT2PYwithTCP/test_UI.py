@@ -6,6 +6,46 @@ import matplotlib.animation as animation
 
 import numpy as np
 
+class Spinbox(tk.Spinbox):
+    def __init__(self, *args, **kwargs):
+        tk.Spinbox.__init__(self, *args, **kwargs)
+        self.bind('<MouseWheel>', self.mouseWheel)
+        self.bind('<Button-4>', self.mouseWheel)
+        self.bind('<Button-5>', self.mouseWheel)
+        self.bind('<Shift-MouseWheel>', self.shiftmouseWheel)
+
+    def mouseWheel(self, event):
+        if event.num == 5 or event.delta == -120:
+            self.invoke('buttondown')
+
+        elif event.num == 4 or event.delta == 120:
+            self.invoke('buttonup')
+
+    def shiftmouseWheel(self, event):
+        if event.num == 5 or event.delta == -120:
+            self.invoke('buttondown')
+            self.invoke('buttondown')
+            self.invoke('buttondown')
+            self.invoke('buttondown')
+            self.invoke('buttondown')
+            self.invoke('buttondown')
+            self.invoke('buttondown')
+            self.invoke('buttondown')
+            self.invoke('buttondown')
+            self.invoke('buttondown')
+
+        elif event.num == 4 or event.delta == 120:
+            self.invoke('buttonup')
+            self.invoke('buttonup')
+            self.invoke('buttonup')
+            self.invoke('buttonup')
+            self.invoke('buttonup')
+            self.invoke('buttonup')
+            self.invoke('buttonup')
+            self.invoke('buttonup')
+            self.invoke('buttonup')
+            self.invoke('buttonup')
+
 
 class App(tk.Frame):
     def __init__(self, master=None, **kwargs):
@@ -40,6 +80,11 @@ class App(tk.Frame):
 
         self.QUIT_btn = tk.Button(btns, width=15, text='Quit', command=self.quit)
         self.QUIT_btn.grid(row=3, column=2)
+
+        self.SPINbox = Spinbox(btns, from_=0, to=360, increment=0.5,
+                               state='readonly', justify='right',
+                               wrap=True)
+        self.SPINbox.grid(row=4,column=1)
 
         self.fig = plt.Figure()
         # self.ax0 = self.fig.add_subplot(411)
