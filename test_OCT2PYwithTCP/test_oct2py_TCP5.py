@@ -57,6 +57,7 @@ class App(tk.Frame):
         tk.Frame.__init__(self, master, **kwargs)
         self.running = False
         self.ani = None
+        self.stokesdrawmode = True
 
         ##### Frame 3) Display Stokes parameters
 
@@ -161,8 +162,14 @@ class App(tk.Frame):
         self.aziSOP_ent.insert(0, '1')
         self.aziSOP_ent.grid(row=2, column=4)
 
+        self.TOGGLE_btn = tk.Button(frm1, width=15, text='STOKES/(Ell,Azi)',
+                                    #command=lambda: threading.Thread(target=self.on_click_graphtoggle).start())
+                                    command=self.on_click_graphtoggle)
+
+        self.TOGGLE_btn.grid(row=3, column=3)
+
         self.QUIT_btn = tk.Button(frm1, width=15, text='Quit', command=self.destroy)
-        self.QUIT_btn.grid(row=3, column=3)
+        self.QUIT_btn.grid(row=4, column=3)
 
 
         # ##### Frame 2) Calibration
@@ -179,11 +186,8 @@ class App(tk.Frame):
         lbl = tk.Label(frm1_1, text=u'\u0394' + 'SOP')
         lbl.grid(row=2, column=1)
 
-        self.Cal_btn = tk.Button(frm1_1, width=20, text='Calculate next input SOP',
-                                 # command=threading.Thread(target=self.run_cal).start())
-                                 # command=self.run_cal)
-                                 command=lambda: threading.Thread(target=self.run_cal).start())
-        self.Cal_btn.grid(row=3, column=1)
+        lbl = tk.Label(frm1_1, text='Ical (kA)')
+        lbl.grid(row=3, column=1)
 
         self.inputSOP_ent = tk.Entry(frm1_1, width=8, justify='right')
         self.inputSOP_ent.insert(0, '1')
@@ -193,11 +197,21 @@ class App(tk.Frame):
         self.deltaSOP_ent.insert(0, '1')
         self.deltaSOP_ent.grid(row=2, column=2)
 
+        self.Ical_ent = tk.Entry(frm1_1, width=8, justify='right')
+        self.Ical_ent.insert(0, '1')
+        self.Ical_ent.grid(row=3, column=2)
+
         lbl = tk.Label(frm1_1, width=15, text=u'\u0394' + 'SOP/Ical')
         lbl.grid(row=1, column=3)
 
         lbl = tk.Label(frm1_1, text='next input SOP')
         lbl.grid(row=2, column=3)
+
+        self.Cal_btn = tk.Button(frm1_1, width=20, text='Calculate next input SOP',
+                                 # command=threading.Thread(target=self.run_cal).start())
+                                 # command=self.run_cal)
+                                 command=lambda: threading.Thread(target=self.run_cal).start())
+        self.Cal_btn.grid(row=3, column=3)
 
         self.FOCSresponse_ent = tk.Entry(frm1_1, width=8, justify='right')
         self.FOCSresponse_ent.insert(0, '1')
@@ -217,6 +231,32 @@ class App(tk.Frame):
         self.DOP = 0
         self.avgell = 0
         self.avgazi = 0
+        self.aziSOP = []
+        self.ellSOP = []
+        self.L = np.array([])
+
+    def on_click_graphtoggle(self):
+        if self.stokesdrawmode == True:
+            self.stokesdrawmode = False
+            self.ax1.autoscale(enable=True, axis='y')
+            self.ax2.autoscale(enable=True, axis='y')
+            self.ax3.autoscale(enable=True, axis='y')
+
+            self.ax1.set_ylabel('ellipticity (deg)')
+            self.ax2.set_ylabel('azimuth (deg)')
+            self.ax3.set_ylabel('delta SOP (deg)')
+            self.canvas.draw_idle()
+
+        else:
+            self.stokesdrawmode = True
+            self.ax1.set_ylim(self.minS, self.maxS)
+            self.ax2.set_ylim(self.minS, self.maxS)
+            self.ax3.set_ylim(self.minS, self.maxS)
+            self.ax1.set_ylabel('S1')
+            self.ax2.set_ylabel('S2')
+            self.ax3.set_ylabel('S3')
+            self.canvas.update()
+
 
     def on_click_clear(self):
         self.S1 = []
@@ -351,9 +391,15 @@ class App(tk.Frame):
         #self.points_ent.insert(0, str(self.S0)+"dBm")
         #self.line0.set_data(*get_data()) # update graph
         #self.line0.set_data(self.t, self.S0)  # update graph
-        self.line1.set_data(self.t, self.S1)  # update graph
-        self.line2.set_data(self.t, self.S2)  # update graph
-        self.line3.set_data(self.t, self.S3)  # update graph
+        if self.stokesdrawmode:
+            self.line1.set_data(self.t, self.S1)  # update graph
+            self.line2.set_data(self.t, self.S2)  # update graph
+            self.line3.set_data(self.t, self.S3)  # update graph
+        else:
+            self.line1.set_data(self.t, self.aziSOP)  # update graph
+            self.line2.set_data(self.t, self.ellSOP)  # update graph
+            self.line3.set_data(self.t, self.L)  # update graph
+
         self.DOP_ent.delete(0,"end")
         self.DOP_ent.insert(0,'%6.4f' % self.DOP)
         self.power_ent.delete(0, "end")
@@ -363,27 +409,32 @@ class App(tk.Frame):
         self.graph.set_3d_properties(self.S3)
 
         self.ellSOP_ent.delete(0,"end")
-        self.ellSOP_ent.insert(0, '%6.3f' % (self.avgell*180/np.pi))
+        self.ellSOP_ent.insert(0, '%6.3f' % (self.avgell*180/np.pi) + u'\u00B0')
 
         self.aziSOP_ent.delete(0, "end")
-        self.aziSOP_ent.insert(0, '%6.3f' % (self.avgazi*180/np.pi))
+        self.aziSOP_ent.insert(0, '%6.3f' % (self.avgazi*180/np.pi) + u'\u00B0')
+
+        self.deltaSOP_ent.delete(0, "end")
+        self.deltaSOP_ent.insert(0, '%6.3f' % (self.L.max() *180 /np.pi) + u'\u00B0')
+        # self.
         # return self.line0, self.line1, self.line2, self.line3
         return self.line1, self.line2, self.line3, self.graph
 
-    # def cal_arclength(self):
-        # L = 0
-        # for nn in range(len(self.S1) - 1):
-        #     c = pi / 2 - S.parameters.ellipticity_angle()[nn] * 2
-        #     b = pi / 2 - S.parameters.ellipticity_angle()[nn + 1] * 2
-        #
-        #     A0 = S.parameters.azimuth()[nn] * 2
-        #     A1 = S.parameters.azimuth()[nn + 1] * 2
-        #     A = A1 - A0
-        #     if A == np.nan:
-        #         A = 0
-        #
-        #     L = L + arccos(cos(b) * cos(c) + sin(b) * sin(c) * cos(A))
-        #     # print("c",c,"b",b,"A0",A0,"A1",A1, "L",L)
+    def cal_arclength(self):
+
+        self.aziSOP = np.arctan2(self.S2, self.S1)
+        self.ellSOP = np.arctan2(self.S3, np.sqrt(self.S1 ** 2 + self.S2 ** 2))
+
+        b = np.pi / 2 - self.ellSOP[0] * 2
+        c = np.pi / 2 - self.ellSOP * 2
+
+        A0 = self.aziSOP[0] * 2
+        A1 = self.aziSOP * 2
+        A = A1 - A0
+        # if A == np.nan:
+        #     A = 0
+
+        self.L = np.arccos(np.cos(b) * np.cos(c) + np.sin(b) * np.sin(c) * np.cos(A))
 
 
     def get_data2(self):
@@ -423,7 +474,7 @@ class App(tk.Frame):
 
             self.avgazi = np.arctan2(self.S2[-1] , self.S1[-1])
             self.avgell = np.arctan2(self.S3[-1] , np.sqrt(self.S1[-1] ** 2 + self.S2[-1] ** 2))
-
+            self.cal_arclength()
             buffer_clear()
         data_available.clear()
         # return S0, S1, S2, S3
