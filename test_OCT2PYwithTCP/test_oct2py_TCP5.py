@@ -209,7 +209,7 @@ class App(tk.Frame):
         self.TOGGLE_btn.grid(row=3, column=3)
 
         self.QUIT_btn = tk.Button(frm1, width=15, text='Quit', command=self.destroy)
-        self.QUIT_btn.grid(row=4, column=3)
+        self.QUIT_btn.grid(row=3, column=4)
 
 
         # ##### Frame 2) Calibration
@@ -266,6 +266,10 @@ class App(tk.Frame):
         self.nextinputSOP_ent.insert(0, '1')
         self.nextinputSOP_ent.grid(row=2, column=4)
 
+        frm1_2 = tk.Frame(frm0, relief=tk.GROOVE, bd=2, padx=2, pady=2)
+        frm1_2.grid(row=1, column=3)
+        lbl = tk.Label(frm1_2, text='next input SOP')
+        lbl.grid(row=1, column=1)
 
         # self.S0 = []
         self.S1 = []
@@ -389,7 +393,7 @@ class App(tk.Frame):
 
         return ax
 
-    def f(self,x):
+    def f(self, x):
         tmp = input(" input data: ")
         tmp = int(tmp)
         self.a = (tmp+1)**2
