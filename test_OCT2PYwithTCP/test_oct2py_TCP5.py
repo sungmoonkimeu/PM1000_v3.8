@@ -6,6 +6,7 @@ from matplotlib import pyplot as plt
 import matplotlib.animation as animation
 
 import numpy as np
+from numpy import pi
 import threading
 import tcphandler
 import socketserver
@@ -287,9 +288,9 @@ class App(tk.Frame):
     def on_click_graphtoggle(self):
         if self.stokesdrawmode == True:
             self.stokesdrawmode = False
-            self.ax1.autoscale(enable=True, axis='y')
-            self.ax2.autoscale(enable=True, axis='y')
-            self.ax3.autoscale(enable=True, axis='y')
+            # self.ax1.autoscale(enable=True, axis='y')
+            # self.ax2.autoscale(enable=True, axis='y')
+            # self.ax3.autoscale(enable=True, axis='y')
 
             self.ax1.set_ylabel('ellipticity (deg)')
             self.ax2.set_ylabel('azimuth (deg)')
@@ -304,7 +305,7 @@ class App(tk.Frame):
             self.ax1.set_ylabel('S1')
             self.ax2.set_ylabel('S2')
             self.ax3.set_ylabel('S3')
-            self.canvas.update()
+            self.canvas.draw_idle()
 
 
     def on_click_clear(self):
@@ -444,10 +445,17 @@ class App(tk.Frame):
             self.line1.set_data(self.t, self.S1)  # update graph
             self.line2.set_data(self.t, self.S2)  # update graph
             self.line3.set_data(self.t, self.S3)  # update graph
+            self.line1.axes.set(ylim=(-1,1))
+            self.line2.axes.set(ylim=(-1,1))
+            self.line3.axes.set(ylim=(-1,1))
         else:
-            self.line1.set_data(self.t, self.aziSOP)  # update graph
-            self.line2.set_data(self.t, self.ellSOP)  # update graph
-            self.line3.set_data(self.t, self.L)  # update graph
+            self.line1.set_data(self.t, self.aziSOP*180/pi)  # update graph
+            self.line2.set_data(self.t, self.ellSOP*180/pi)  # update graph
+            self.line3.set_data(self.t, self.L*180/pi)  # update graph
+            self.line1.axes.set(ylim=(0,360))
+            self.line2.axes.set(ylim=(0,360))
+            self.line3.axes.set(ylim=(-30,360))
+
 
         self.DOP_ent.delete(0,"end")
         self.DOP_ent.insert(0,'%6.4f' % self.DOP)
@@ -465,6 +473,7 @@ class App(tk.Frame):
 
         self.deltaSOP_ent.delete(0, "end")
         self.deltaSOP_ent.insert(0, '%6.3f' % (self.L.max() *180 /np.pi) + u'\u00B0')
+
         # self.
         # return self.line0, self.line1, self.line2, self.line3
         return self.line1, self.line2, self.line3, self.graph
@@ -474,16 +483,30 @@ class App(tk.Frame):
         self.aziSOP = np.arctan2(self.S2, self.S1)
         self.ellSOP = np.arctan2(self.S3, np.sqrt(self.S1 ** 2 + self.S2 ** 2))
 
+        # finding maximum length of Arc
+        # 1st try:
+        # let assume the first data point as a end point of the arc
+        # calculate the arc length from the first data point
+        # find the point that shows the maximum arclength with the first data point
+
         b = np.pi / 2 - self.ellSOP[0] * 2
         c = np.pi / 2 - self.ellSOP * 2
-
         A0 = self.aziSOP[0] * 2
         A1 = self.aziSOP * 2
         A = A1 - A0
-        # if A == np.nan:
-        #     A = 0
 
-        self.L = np.arccos(np.cos(b) * np.cos(c) + np.sin(b) * np.sin(c) * np.cos(A))
+        L1 = np.arccos(np.cos(b) * np.cos(c) + np.sin(b) * np.sin(c) * np.cos(A))
+        nMax = L1.argmax()
+
+        # 2nd try:
+        # let this point as a new end point of the arc
+        # then calculate the arc length again
+        b = np.pi / 2 - self.ellSOP[nMax] * 2
+        A0 = self.aziSOP[nMax] * 2
+        A = A1 - A0
+        L2 = np.arccos(np.cos(b) * np.cos(c) + np.sin(b) * np.sin(c) * np.cos(A))
+
+        self.L=L1 if L1.max() > L2.max() else L2
 
 
     def get_data2(self):
