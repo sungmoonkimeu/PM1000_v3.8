@@ -11,6 +11,7 @@ import threading
 import tcphandler
 import socketserver
 import octavethread
+import time
 
 from scipy import optimize
 
@@ -47,8 +48,8 @@ def buffer_clear():
     received_data.clear()
 
 # # Start the threads
-# othread = octavethread.OctaveThread()
-# sthread = ServerThread()
+othread = octavethread.OctaveThread()
+sthread = ServerThread()
 
 ################ Run server end ###################
 ###################################################
@@ -148,11 +149,11 @@ class App(tk.Frame):
         # self.ax0.set_ylim(0, self.maxS)
         # self.ax0.set_xlim(0, 500)
         self.ax1.set_ylim(self.minS, self.maxS)
-        self.ax1.set_xlim(0, 2000)
+        self.ax1.set_xlim(0, 10000)
         self.ax2.set_ylim(self.minS, self.maxS)
-        self.ax2.set_xlim(0, 2000)
+        self.ax2.set_xlim(0, 10000)
         self.ax3.set_ylim(self.minS, self.maxS)
-        self.ax3.set_xlim(0, 2000)
+        self.ax3.set_xlim(0, 10000)
 
         #self.ax1.xlabel("data")
         self.ax1.set_ylabel("S1")
@@ -166,74 +167,96 @@ class App(tk.Frame):
         ##### Frame 1-1) List box for calibration ####
         Listbox_frm = tk.Frame(Listbox_Cal_frm, relief=tk.GROOVE, bd=2, padx=2, pady=2)
         Listbox_frm.grid(row=1, column=1)
-        lbl = tk.Label(Listbox_frm, text="Azimuth of \n Input SOP (deg)")
-        lbl.grid(row=1, column=1)
-        self.lb_in_SOP = tk.Listbox(Listbox_frm)
-        self.lb_in_SOP.grid(row=2,column=1)
+
+        # input SOP
         lbl = tk.Label(Listbox_frm, text="Input SOP")
+        lbl.grid(row=1, column=1)
+        self.lb_in_SOP = tk.Listbox(Listbox_frm, width=10)
+        self.lb_in_SOP.grid(row=2,column=1)
+        lbl = tk.Label(Listbox_frm, text="Input SOP\n (deg)")
         lbl.grid(row=3, column=1)
-        self.inputSOP_sb = Spinbox(Listbox_frm, width=8, from_=0, to=360, increment=0.5,
-                                   wrap=True, state='readonly', justify='right')
-        self.inputSOP_sb.grid(row=4, column=1)
+        # self.inputSOP_sb = Spinbox(Listbox_frm, width=8, from_=0, to=360, increment=0.5,
+        #                            wrap=True, state='readonly', justify='right')
+        # self.inputSOP_sb.grid(row=4, column=1)
+        self.inputSOP_ent = tk.Entry(Listbox_frm, width=8, justify='right')
+        self.inputSOP_ent.insert(0, 0)
+        self.inputSOP_ent.grid(row=4, column=1)
+        # next input SOP
+        lbl = tk.Label(Listbox_frm, text='next SOP\n (deg)')
+        lbl.grid(row=5, column=1)
+        self.nextinputSOP_ent = tk.Entry(Listbox_frm, width=8, justify='right')
+        self.nextinputSOP_ent.insert(0, 0)
+        # self.nextinputSOP_ent.config(state='disabled')
+        self.nextinputSOP_ent.grid(row=6, column=1)
 
-
-        lbl = tk.Label(Listbox_frm, text= u'\u0394' + 'SOP/ICal')
+        # delta SOP
+        lbl = tk.Label(Listbox_frm, text= u'\u0394' + 'SOP')
         lbl.grid(row=1, column=2)
-        self.lb_d_SOP = tk.Listbox(Listbox_frm)
+        self.lb_d_SOP = tk.Listbox(Listbox_frm, width=10)
         self.lb_d_SOP.grid(row=2, column=2)
 
-        lbl = tk.Label(Listbox_frm, text=u'\u0394' + 'SOP')
+        lbl = tk.Label(Listbox_frm, text=u'\u0394' + 'SOP\n (deg)')
         lbl.grid(row=3, column=2)
         self.deltaSOP_ent = tk.Entry(Listbox_frm, width=8, justify='right')
         self.deltaSOP_ent.insert(0, '0')
         self.deltaSOP_ent.grid(row=4, column=2)
 
-        lbl = tk.Label(Listbox_frm, text='Ical (kA)')
-        lbl.grid(row=5, column=2)
+        # VS3 coil current for optimization/calibration
+        lbl = tk.Label(Listbox_frm, text='I_opt/cal')
+        lbl.grid(row=1, column=3)
+        self.lb_Ical = tk.Listbox(Listbox_frm, width=10)
+        self.lb_Ical.grid(row=2, column=3)
+
+        lbl = tk.Label(Listbox_frm, text='I_opt/cal\n (kA)')
+        lbl.grid(row=3, column=3)
         self.Ical_ent = tk.Entry(Listbox_frm, width=8, justify='right')
         self.Ical_ent.insert(0, '40')
-        self.Ical_ent.grid(row=6, column=2)
+        self.Ical_ent.grid(row=4, column=3)
 
-        lbl = tk.Label(Listbox_frm, width=15, text=u'\u0394' + 'SOP/Ical')
-        lbl.grid(row=7, column=2)
+        # FOCS response
+        lbl = tk.Label(Listbox_frm, text=u'\u0394' + 'SOP/Ical')
+        lbl.grid(row=1, column=4)
+        self.lb_FOCSresponse = tk.Listbox(Listbox_frm, width=10)
+        self.lb_FOCSresponse.grid(row=2, column=4)
+
+        lbl = tk.Label(Listbox_frm, text=u'\u0394' + 'SOP/Ical\n (deg/kA)')
+        lbl.grid(row=3, column=4)
         self.FOCSresponse_ent = tk.Entry(Listbox_frm, width=8, justify='right')
         self.FOCSresponse_ent.insert(0, 0)
-        self.FOCSresponse_ent.grid(row=8, column=2)
-
-        lbl = tk.Label(Listbox_frm, text='Next input SOP')
-        lbl.grid(row=1, column=3)
-        self.lb_nextSOP = tk.Listbox(Listbox_frm)
-        self.lb_nextSOP.grid(row=2, column=3)
-
-        lbl = tk.Label(Listbox_frm, text='next input SOP')
-        lbl.grid(row=3, column=3)
-        self.nextinputSOP_ent = tk.Entry(Listbox_frm, width=8, justify='right')
-        self.nextinputSOP_ent.insert(0, 0)
-        self.nextinputSOP_ent.config(state='disabled')
-        self.nextinputSOP_ent.grid(row=4, column=3)
+        self.FOCSresponse_ent.grid(row=4, column=4)
 
 
         ##### Frame 2-2) Measurement and control buttons ####
         # frm2 = tk.Frame(self, relief=tk.GROOVE, bd=2, padx=2, pady=2)
         # # btns.pack(side=tk.LEFT)
         # frm2.grid(row=2, column=2)
-
-        frm1_1 = tk.Frame(Listbox_Cal_frm, relief=tk.GROOVE, bd=2, padx=2, pady=2)
+        Listbox_frm.update()
+        frm1_1 = tk.Frame(Listbox_Cal_frm,
+                          relief=tk.GROOVE, bd=2, padx=2, pady=2)
         #frm.pack(side=tk.LEFT)
-        frm1_1.grid(row=2, column=1)
+        frm1_1.grid(row=2, column=1, sticky="news")
+        frm1_1.update()
 
-        self.Set_btn = tk.Button(frm1_1, width=16, height=2,
+        #width_frm1_1 = 25
+        #width_frm1_1 = Listbox_frm.winfo_width()
+        width_frm1_1 = 31
+        self.info_ent = tk.Text(frm1_1, width= width_frm1_1, height=2)
+        self.info_ent.insert("end", 'Device connection check')
+        self.info_ent.grid(row=1, column=1, sticky="ns")
+
+        self.Opt_btn = tk.Button(frm1_1, height=2,
+                                 wraplength=160, text='Run Optimization',
+                                 command=lambda: threading.Thread(target=self.run_optimization).start())
+        self.Opt_btn.grid(row=2, column=1,sticky="ew")
+        self.Set_btn = tk.Button(frm1_1, height=2,
                                  wraplength=80, text='Set data',
-                                 command=lambda: threading.Thread(target=self.on_click_set).start())
-        self.Set_btn.grid(row=1, column=1)
-        self.Opt_btn = tk.Button(frm1_1, width=16,height=2,
-                                 wraplength=80, text='Calculate next point',
-                                 command=lambda: threading.Thread(target=self.run_cal).start())
-        self.Opt_btn.grid(row=1, column=2)
-        self.Cal_btn = tk.Button(frm1_1, width=16,height=2,
+                                 command=lambda: threading.Thread(target=self.on_click_set).start(),
+                                 state='disabled')
+        self.Set_btn.grid(row=3, column=1, sticky="ew")
+        self.Cal_btn = tk.Button(frm1_1, height=2,
                                  wraplength=80, text='Calibration',
                                  command=lambda: threading.Thread(target=self.run_cal).start())
-        self.Cal_btn.grid(row=1, column=3)
+        self.Cal_btn.grid(row=4, column=1, sticky="ew")
 
 
         ##### Frame 2-1) Measurement and control buttons ####
@@ -302,7 +325,11 @@ class App(tk.Frame):
         self.inputSOP = 0
         self.output_dSOP = 0
         self.nextSOP = 0
-        self.log_inputSOP= (0, )
+        self.isSET = False
+        self.Ical = 0
+        self.deltaSOP = 0
+        self.FOCSresponse = 0
+
 
     def on_click_graphtoggle(self):
         if self.stokesdrawmode == True:
@@ -414,26 +441,67 @@ class App(tk.Frame):
         return ax
 
     def on_click_set(self):
-        self.inputSOP = self.inputSOP_sb.get()
+        self.inputSOP = self.inputSOP_ent.get()
         self.lb_in_SOP.insert(0, self.inputSOP)
 
-        self.output_dSOP = float(self.FOCSresponse_ent.get())
-        self.lb_d_SOP.insert(0, self.output_dSOP)
+        self.Ical = float(self.Ical_ent.get())
+        self.lb_Ical.insert(0, self.Ical)
 
+        self.deltaSOP = float(self.deltaSOP_ent.get()[:-2])
+        self.lb_d_SOP.insert(0, self.deltaSOP)
+
+        self.FOCSresponse = float(self.FOCSresponse_ent.get())
+        self.lb_FOCSresponse.insert(0, self.FOCSresponse)
+
+        # todo check if there is no error
+        self.isSET = True
 
     def f(self, x):
-        print("input value is", x)
-        tmp = input(" input data: ")
-        tmp = float(tmp)*x
-        # self.a = -(tmp+1)**2
-        return (tmp+1)**2
+        x_tmp = round(x[0]*180/pi*2)/2
+        print("next azimuth of input SOP is", x_tmp, "deg")
+        if x_tmp < 0:
+            x_tmp = x_tmp + 360
+        # self.nextinputSOP_ent.config(state='enabled')
+        self.nextinputSOP_ent.delete(0, "end")
+        self.nextinputSOP_ent.insert(0, x_tmp)
+        # self.nextinputSOP_ent.config(state='disabled')
 
-    def run_cal(self):
+        self.inputSOP_ent.delete(0,"end")
+        self.inputSOP_ent.insert(0, x_tmp)
+
+
+        while (1):
+            if self.isSET == True:
+                # tmp = input(" input data: ")
+                tmp = -self.FOCSresponse
+                print("FOCS response: ", -tmp, "deg/kA")
+                self.isSET = False
+                break
+            time.sleep(0.1)
+        # tmp = float(tmp)*x
+        # self.a = -(tmp+1)**2
+        return tmp
+
+    def run_optimization(self):
+        if str(self.Opt_btn['relief']) == 'sunken':
+            return
+        init_polstate = np.array([[0], [pi / 4]])
         # minimum = optimize.fmin(self.f, 1)
-        fmin_result = optimize.fmin(self.f, 1, maxiter=30, xtol=1, ftol=0.05,
-                                    # initial_simplex=init_polstate,
+        self.Opt_btn.config(relief="sunken",
+                            state="active",
+                            text="Optimization in progress"
+                            )
+        self.Set_btn.config(state="normal", bg='#7FFF00')
+        # todo determine ftol with respect to the SOP uncertainty
+        fmin_result = optimize.fmin(self.f, 1, maxiter=30, xtol=1, ftol=0.015,
+                                    initial_simplex=init_polstate,
                                     retall=True,
                                     full_output=1)
+
+        self.Opt_btn.config(relief="raised",
+                            state="normal",
+                            text='Run Optimization')
+        self.Set_btn.config(state="disabled", bg='SystemButtonFace')
 
     def on_click(self):
         '''the button is a start, pause and unpause button all in one
@@ -504,11 +572,16 @@ class App(tk.Frame):
         self.aziSOP_ent.delete(0, "end")
         self.aziSOP_ent.insert(0, '%6.3f' % (self.avgazi*180/np.pi) + u'\u00B0')
 
-        self.deltaSOP_ent.delete(0, "end")
-        self.deltaSOP_ent.insert(0, '%6.3f' % (self.L.max() *180 /np.pi) + u'\u00B0')
+        if np.isnan(self.L.max()) == False:
+            self.deltaSOP_ent.delete(0, "end")
+            self.deltaSOP_ent.insert(0, '%6.3f' % (self.L.max() *180 /np.pi) + u'\u00B0')
 
-        self.FOCSresponse_ent.delete(0,"end")
-        self.FOCSresponse_ent.insert(0, '%6.3f' % ((self.L.max() *180 /np.pi)/float(self.Ical_ent.get())) )
+            self.FOCSresponse_ent.delete(0,"end")
+            self.FOCSresponse_ent.insert(0, '%6.3f' % ((self.L.max() *180 /np.pi)/float(self.Ical_ent.get())) )
+
+        self.info_ent.delete("1.0", "end")
+        self.info_ent.insert("1.0", self.L.max())
+        self.info_ent.insert("2.0", np.isnan(self.L.max()))
 
         # self.
         # return self.line0, self.line1, self.line2, self.line3
@@ -516,8 +589,12 @@ class App(tk.Frame):
 
     def cal_arclength(self):
 
-        self.aziSOP = np.arctan2(self.S2, self.S1)
-        self.ellSOP = np.arctan2(self.S3, np.sqrt(self.S1 ** 2 + self.S2 ** 2))
+        nS = np.sqrt(self.S1**2 + self.S2**2 + self.S3**2)
+        s1 = self.S1/nS
+        s2 = self.S2/nS
+        s3 = self.S3/nS
+        self.aziSOP = np.arctan2(s2,s1)
+        self.ellSOP = np.arctan2(s3, np.sqrt(s1 ** 2 + s2 ** 2))
 
         # finding maximum length of Arc
         # 1st try:
@@ -551,7 +628,7 @@ class App(tk.Frame):
         # anim = animation.FuncAnimation(fig, animate, init_func=init,frames=200, interval=20, blit=True)
         tmpdata = np.array(received_data)  # ~1ms
         # print(tmpdata.size)
-        ndata = 32 * 10
+        ndata = 8 * 16
         if tmpdata.size > ndata * 4:  # ~1ms
             # print("comecome")
             # tS0 = tmpdata[:, 0:ndata - 1]
@@ -568,7 +645,7 @@ class App(tk.Frame):
             tDOP = tmpdata[:, -1]
             # now = time.time()
             # print("Elapsed %f" % (time.time() - now))
-            ndata_show = 2000
+            ndata_show = 10000
             nstep = 1
             # self.S0 = self.S0[-ndata_show::nstep]
             self.S1 = self.S1[-ndata_show::nstep]

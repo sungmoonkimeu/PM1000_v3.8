@@ -14,7 +14,7 @@ while(1);
     % randdata = rand(1,100); % some random data to send
 %    tic()
 
-    ndata = 32;
+    ndata = 8;
 
     % DOP                               512 + 24, 512 + 31
     % standard normalization            S1, S2, S3 = 512 + 24, 512 + 25, 512 + 26
@@ -29,7 +29,7 @@ while(1);
     % S1          in uW          512 + 14, 512 + 15
     % S2          in uW          512 + 16, 512 + 17
 
-    for i =0:9
+    for i =0:15
         % [tDOP OK0] = readburstpm(0, ndata*i, ndata*(i+1)-1, 512+24);
         [tS1 OK1] = readburstpm(0, ndata*i, ndata*(i+1)-1, 512+25);
         [tS2 OK2] = readburstpm(0, ndata*i, ndata*(i+1)-1, 512+26);
