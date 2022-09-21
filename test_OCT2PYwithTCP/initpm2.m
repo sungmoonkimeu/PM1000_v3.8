@@ -1,4 +1,4 @@
-writepm(512+1,0)
+writepm(512+1,20)
 curATE = readpm(512+1)
 printf("current ATE = %.0f\n", curATE)
 printf("current sampling time = %.0f ns\n", 2^curATE*10)

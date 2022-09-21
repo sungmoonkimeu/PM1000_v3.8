@@ -7,6 +7,8 @@ import matplotlib.animation as animation
 
 import numpy as np
 from numpy import pi
+import pandas as pd
+
 import threading
 import tcphandler
 import socketserver
@@ -132,12 +134,14 @@ class App(tk.Frame):
         self.line1, = self.ax1.plot([], [], lw=2)
         self.line2, = self.ax2.plot([], [], lw=2)
         self.line3, = self.ax3.plot([], [], lw=2)
+        self.line3_2, = self.ax3.plot([], [], lw=2, color='red')
 
         self.ax4 = self.fig.add_subplot(gs_fig[:, 1], projection='3d')
         # self.ax4.text2D(0.05, 0.95, "2D Text", transform=self.ax4.transAxes)
 
         self.PS(self.ax4)
         self.graph, = self.ax4.plot([], [], [], color='red', linestyle="", marker="o", markersize=1)
+        self.line, = self.ax4.plot([], [], [], color='blue', lw=2)
         self.canvas = FigureCanvasTkAgg(self.fig, master=Graph_frm)
         self.canvas.draw()
         self.canvas.get_tk_widget().pack()
@@ -225,6 +229,11 @@ class App(tk.Frame):
         self.FOCSresponse_ent.insert(0, 0)
         self.FOCSresponse_ent.grid(row=4, column=4)
 
+        lbl = tk.Label(Listbox_frm, text='Opt. limit')
+        lbl.grid(row=5, column=4)
+        self.Optlimit_ent = tk.Entry(Listbox_frm, width=8, justify='right')
+        self.Optlimit_ent.insert(0, 0)
+        self.Optlimit_ent.grid(row=6, column=4)
 
         ##### Frame 2-2) Measurement and control buttons ####
         # frm2 = tk.Frame(self, relief=tk.GROOVE, bd=2, padx=2, pady=2)
@@ -244,19 +253,23 @@ class App(tk.Frame):
         self.info_ent.insert("end", 'Device connection check')
         self.info_ent.grid(row=1, column=1, sticky="ns")
 
+        self.OptSet_btn = tk.Button(frm1_1, height=2,
+                                 wraplength=160, text='Set Optimization parameters',
+                                 command=lambda: threading.Thread(target=self.on_click_set_opt).start())
+        self.OptSet_btn.grid(row=2, column=1,sticky="ew")
         self.Opt_btn = tk.Button(frm1_1, height=2,
                                  wraplength=160, text='Run Optimization',
                                  command=lambda: threading.Thread(target=self.run_optimization).start())
-        self.Opt_btn.grid(row=2, column=1,sticky="ew")
+        self.Opt_btn.grid(row=3, column=1,sticky="ew")
         self.Set_btn = tk.Button(frm1_1, height=2,
                                  wraplength=80, text='Set data',
                                  command=lambda: threading.Thread(target=self.on_click_set).start(),
                                  state='disabled')
-        self.Set_btn.grid(row=3, column=1, sticky="ew")
+        self.Set_btn.grid(row=4, column=1, sticky="ew")
         self.Cal_btn = tk.Button(frm1_1, height=2,
                                  wraplength=80, text='Calibration',
                                  command=lambda: threading.Thread(target=self.run_cal).start())
-        self.Cal_btn.grid(row=4, column=1, sticky="ew")
+        self.Cal_btn.grid(row=5, column=1, sticky="ew")
 
 
         ##### Frame 2-1) Measurement and control buttons ####
@@ -305,10 +318,11 @@ class App(tk.Frame):
 
         self.TOGGLE_btn.grid(row=6, column=1)
 
+        self.SAVE_btn = tk.Button(frm1, width=15, text='Save', command=self.on_click_save)
+        self.SAVE_btn.grid(row=7, column=1)
+
         self.QUIT_btn = tk.Button(frm1, width=15, text='Quit', command=self.destroy)
         self.QUIT_btn.grid(row=6, column=2)
-
-
 
         # self.S0 = []
         self.S1 = []
@@ -329,7 +343,16 @@ class App(tk.Frame):
         self.Ical = 0
         self.deltaSOP = 0
         self.FOCSresponse = 0
+        self.np0 = 0
+        self.np1 = 0
 
+    def on_click_set_opt(self):
+        self.Optlimit_ent.delete(0,"end")
+        self.Optlimit_ent.insert(0, '%5.4f' % (float(self.FOCSresponse_ent.get())*1.05))
+
+    def on_click_save(self):
+        S = np.vstack((self.S1, self.S2, self.S3))
+        np.savetxt("Stokes.csv", S.T, delimiter=',', fmt="%.9f")
 
     def on_click_graphtoggle(self):
         if self.stokesdrawmode == True:
@@ -338,8 +361,8 @@ class App(tk.Frame):
             # self.ax2.autoscale(enable=True, axis='y')
             # self.ax3.autoscale(enable=True, axis='y')
 
-            self.ax1.set_ylabel('ellipticity (deg)')
-            self.ax2.set_ylabel('azimuth (deg)')
+            self.ax1.set_ylabel('azimuth (deg)')
+            self.ax2.set_ylabel('ellipticity (deg)')
             self.ax3.set_ylabel('delta SOP (deg)')
             self.canvas.draw_idle()
 
@@ -485,15 +508,20 @@ class App(tk.Frame):
     def run_optimization(self):
         if str(self.Opt_btn['relief']) == 'sunken':
             return
-        init_polstate = np.array([[0], [pi / 4]])
+        init_polstate = np.array([[0], [pi / 6]])
         # minimum = optimize.fmin(self.f, 1)
         self.Opt_btn.config(relief="sunken",
                             state="active",
                             text="Optimization in progress"
                             )
         self.Set_btn.config(state="normal", bg='#7FFF00')
-        # todo determine ftol with respect to the SOP uncertainty
-        fmin_result = optimize.fmin(self.f, 1, maxiter=30, xtol=1, ftol=0.015,
+        minftol = float(self.Optlimit_ent.get())
+        self.info_ent.delete("1.0", "end")
+        self.info_ent.insert("1.0", ("Optimization ftol: %5.4f" % minftol))
+
+        fmin_result = optimize.fmin(self.f, 1, maxiter=30, xtol=1,
+                                    # ftol=0.015,
+                                    ftol=minftol,
                                     initial_simplex=init_polstate,
                                     retall=True,
                                     full_output=1)
@@ -553,8 +581,9 @@ class App(tk.Frame):
             self.line1.set_data(self.t, self.aziSOP*180/pi)  # update graph
             self.line2.set_data(self.t, self.ellSOP*180/pi)  # update graph
             self.line3.set_data(self.t, self.L*180/pi)  # update graph
-            self.line1.axes.set(ylim=(0,360))
-            self.line2.axes.set(ylim=(0,360))
+            self.line3_2.set_data(self.t[[self.np0, self.np1]], self.L[[self.np0, self.np1]]*180/pi)
+            self.line1.axes.set(ylim=(-180,180))
+            self.line2.axes.set(ylim=(-90,90))
             self.line3.axes.set(ylim=(-30,360))
 
 
@@ -565,6 +594,8 @@ class App(tk.Frame):
 
         self.graph.set_data(self.S1, self.S2)
         self.graph.set_3d_properties(self.S3)
+        self.line.set_data(self.S1[[self.np0,self.np1]], self.S2[[self.np0,self.np1]])
+        self.line.set_3d_properties(self.S3[[self.np0,self.np1]])
 
         self.ellSOP_ent.delete(0,"end")
         self.ellSOP_ent.insert(0, '%6.3f' % (self.avgell*180/np.pi) + u'\u00B0')
@@ -577,15 +608,15 @@ class App(tk.Frame):
             self.deltaSOP_ent.insert(0, '%6.3f' % (self.L.max() *180 /np.pi) + u'\u00B0')
 
             self.FOCSresponse_ent.delete(0,"end")
-            self.FOCSresponse_ent.insert(0, '%6.3f' % ((self.L.max() *180 /np.pi)/float(self.Ical_ent.get())) )
+            self.FOCSresponse_ent.insert(0, '%7.4f' % ((self.L.max() *180 /np.pi)/float(self.Ical_ent.get())) )
 
-        self.info_ent.delete("1.0", "end")
-        self.info_ent.insert("1.0", self.L.max())
-        self.info_ent.insert("2.0", np.isnan(self.L.max()))
+        # self.info_ent.delete("1.0", "end")
+        # self.info_ent.insert("1.0", self.L.max())
+        # self.info_ent.insert("2.0", np.isnan(self.L.max()))
 
         # self.
         # return self.line0, self.line1, self.line2, self.line3
-        return self.line1, self.line2, self.line3, self.graph
+        return self.line1, self.line2, self.line3, self.line3_2, self.graph, self.line
 
     def cal_arclength(self):
 
@@ -602,24 +633,28 @@ class App(tk.Frame):
         # calculate the arc length from the first data point
         # find the point that shows the maximum arclength with the first data point
 
-        b = np.pi / 2 - self.ellSOP[0] * 2
-        c = np.pi / 2 - self.ellSOP * 2
-        A0 = self.aziSOP[0] * 2
-        A1 = self.aziSOP * 2
+        b = np.pi / 2 - self.ellSOP[0]
+        c = np.pi / 2 - self.ellSOP
+        A0 = self.aziSOP[0]
+        A1 = self.aziSOP
         A = A1 - A0
 
+        # todo length calculation error handling
         L1 = np.arccos(np.cos(b) * np.cos(c) + np.sin(b) * np.sin(c) * np.cos(A))
         nMax = L1.argmax()
 
         # 2nd try:
         # let this point as a new end point of the arc
         # then calculate the arc length again
-        b = np.pi / 2 - self.ellSOP[nMax] * 2
-        A0 = self.aziSOP[nMax] * 2
+        b = np.pi / 2 - self.ellSOP[nMax]
+        A0 = self.aziSOP[nMax]
         A = A1 - A0
         L2 = np.arccos(np.cos(b) * np.cos(c) + np.sin(b) * np.sin(c) * np.cos(A))
 
-        self.L=L1 if L1.max() > L2.max() else L2
+        #self.L=L1 if L1.max() > L2.max() else L2
+        self.L = L2
+        self.np0 = nMax
+        self.np1 = L2.argmax()
 
 
     def get_data2(self):
@@ -628,7 +663,7 @@ class App(tk.Frame):
         # anim = animation.FuncAnimation(fig, animate, init_func=init,frames=200, interval=20, blit=True)
         tmpdata = np.array(received_data)  # ~1ms
         # print(tmpdata.size)
-        ndata = 8 * 16
+        ndata = 128 * 2
         if tmpdata.size > ndata * 4:  # ~1ms
             # print("comecome")
             # tS0 = tmpdata[:, 0:ndata - 1]

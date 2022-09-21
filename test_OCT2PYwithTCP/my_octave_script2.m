@@ -4,17 +4,18 @@ pkg load io  % to have JSON
 
 % send some random data
 while(1);
+    % tic()
     S = [];
     S0 = [];
     S1 = [];
     S2 = [];
     S3 = [];
 
-    pause (0.001) % simulate the execution time your script needs
+    pause (0.005) % simulate the execution time your script needs
     % randdata = rand(1,100); % some random data to send
 %    tic()
 
-    ndata = 8;
+    ndata = 128;
 
     % DOP                               512 + 24, 512 + 31
     % standard normalization            S1, S2, S3 = 512 + 24, 512 + 25, 512 + 26
@@ -29,7 +30,7 @@ while(1);
     % S1          in uW          512 + 14, 512 + 15
     % S2          in uW          512 + 16, 512 + 17
 
-    for i =0:15
+    for i =0:1
         % [tDOP OK0] = readburstpm(0, ndata*i, ndata*(i+1)-1, 512+24);
         [tS1 OK1] = readburstpm(0, ndata*i, ndata*(i+1)-1, 512+25);
         [tS2 OK2] = readburstpm(0, ndata*i, ndata*(i+1)-1, 512+26);
@@ -49,5 +50,5 @@ while(1);
 
     tcpcli = tcpclient("127.0.0.1", 9999);
     write(tcpcli, toJSON(S));
-%    toc()
+    % toc()
 end
