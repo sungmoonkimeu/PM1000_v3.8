@@ -156,6 +156,16 @@ class App(tk.Frame):
         self.ax2.set_ylabel("S2")
         self.ax3.set_ylabel("S3")
 
+        ##### ADC control (2,1) ADC control
+        Plotdata_frm = tk.Frame(self, relief=tk.GROOVE, bd=2, padx=2, pady=2)
+        Plotdata_frm.grid(row=2, column=1)
+
+        lbl = tk.Label(Plotdata_frm, text="number of data to pick up from buffer")
+        lbl.grid(row=1, column=1)
+        self.numpickup_ent = tk.Entry(Plotdata_frm, width=8, justify='right')
+        self.numpickup_ent.insert(0, '5')
+        self.numpickup_ent.grid(row=1, column=2)
+
         ##### Frame 1-1) List box for calibration ####
         Listbox_Cal_frm = tk.Frame(self, relief=tk.GROOVE, bd=2, padx=2, pady=2)
         Listbox_Cal_frm.grid(row=1, column=2)
@@ -318,7 +328,7 @@ class App(tk.Frame):
         self.SAVE_btn = tk.Button(frm1, width=15, text='Save', command=self.on_click_save)
         self.SAVE_btn.grid(row=7, column=1)
 
-        self.QUIT_btn = tk.Button(frm1, width=15, text='Quit', command=self.destroy)
+        self.QUIT_btn = tk.Button(frm1, width=15, text='Quit', command=self.on_click_quit)
         self.QUIT_btn.grid(row=6, column=2)
 
         # self.S0 = []
@@ -342,7 +352,10 @@ class App(tk.Frame):
         self.FOCSresponse = 0
         self.np0 = 0
         self.np1 = 0
-
+    def on_click_quit(self):
+        #todo create quit function
+        self.destroy()
+        self.quit()
     def on_click_fullscan(self):
 
 
@@ -554,14 +567,21 @@ class App(tk.Frame):
                                     initial_simplex=init_polstate,
                                     retall=True,
                                     full_output=1)
-        self.info_ent.delete("1.0", "end")
-        self.info_ent.insert("1.0", "Optimization has finished")
+
         log_data = {'inputSOP' : self.lb_in_SOP.get(0,"end")[::-1],
                     'deltaSOP' : self.lb_d_SOP.get(0,"end")[::-1],
                     'Ical': self.lb_Ical.get(0,"end"[::-1]),
                     'FOCSresponse': self.lb_FOCSresponse.get(0,"end")[::-1]}
         df = pd.DataFrame(log_data, columns=['inputSOP', 'deltaSOP', 'Ical', 'FOCSresponse'])
         df.to_csv("optimization_log.csv")
+
+        self.info_ent.delete("1.0", "end")
+        self.info_ent.insert("1.0", "Optimization has finished")
+        if df['FOCSresponse'].argmax != 0:
+            maxArg = df['FOCSresponse'].argmax
+            strfinal = 'Adjust the input SOP to ' + str(df['inputSOP'][maxArg])+'deg'
+            self.info_ent.insert("2.0", strfinal)
+        self.info_ent.insert("3.0", "Optimization log has been saved")
 
         self.Opt_btn.config(relief="raised",
                             state="normal",
@@ -711,18 +731,22 @@ class App(tk.Frame):
         # anim = animation.FuncAnimation(fig, animate, init_func=init,frames=200, interval=20, blit=True)
         tmpdata = np.array(received_data)  # ~1ms
         # print(tmpdata.size)
-        ndata = 128 * 2
+        ndata = 128 * 2  # This should be the same with the value in my_octave_script2.m
         if tmpdata.size > ndata * 4:  # ~1ms
             # print("comecome")
             # tS0 = tmpdata[:, 0:ndata - 1]
             # self.S0 = np.hstack((self.S0, tS0.reshape(tS0.size)))
             tS1 = tmpdata[:, 0:ndata - 1]
+            ns = 5  # ~ 5000 sampling/sec
+            ns = 50
+            ns = int(self.numpickup_ent.get())
+
             #self.S1 = np.hstack((self.S1, tS1.reshape(tS1.size).mean()))
-            self.S1 = np.hstack((self.S1, tS1.reshape(tS1.size)[::5]))
+            self.S1 = np.hstack((self.S1, tS1.reshape(tS1.size)[::ns]))
             tS2 = tmpdata[:, ndata:ndata * 2 - 1]
-            self.S2 = np.hstack((self.S2, tS2.reshape(tS2.size)[::5]))
+            self.S2 = np.hstack((self.S2, tS2.reshape(tS2.size)[::ns]))
             tS3 = tmpdata[:, ndata * 2:ndata * 3 - 1]
-            self.S3 = np.hstack((self.S3, tS3.reshape(tS3.size)[::5]))
+            self.S3 = np.hstack((self.S3, tS3.reshape(tS3.size)[::ns]))
 
             tS0 = tmpdata[:, -2]
             tDOP = tmpdata[:, -1]
