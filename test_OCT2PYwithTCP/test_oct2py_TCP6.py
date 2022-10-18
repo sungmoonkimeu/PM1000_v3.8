@@ -365,7 +365,7 @@ class App(tk.Frame):
         print(num_calibration, "/20")
         self.info_ent.delete("1.0", "end")
         self.info_ent.insert("1.0", ("%5d/20" % num_calibration))
-        if int(len(self.lb_in_SOP.get(0, "end"))) > 20:
+        if int(len(self.lb_in_SOP.get(0, "end"))) >= 20:
             log_data = {'inputSOP': self.lb_in_SOP.get(0, "end")[::-1],
                         'deltaSOP': self.lb_d_SOP.get(0, "end")[::-1],
                         'Ical': self.lb_Ical.get(0, "end")[::-1],
