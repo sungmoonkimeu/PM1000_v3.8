@@ -527,9 +527,9 @@ class App(tk.Frame):
         tmp_list_y = self.lb_FOCSresponse.get(0,"end")
 
         for nn, item in enumerate(tmp_list_x):
-            if item == x_tmp:
+            if float(item) == x_tmp:
                 print('ingored the same value of input SOP',x_tmp)
-                return -tmp_list_y[nn]
+                return -float(tmp_list_y[nn])
 
         print("next azimuth of input SOP is", x_tmp, "deg")
         if x_tmp < 0:
@@ -659,10 +659,11 @@ class App(tk.Frame):
         self.power_ent.delete(0, "end")
         self.power_ent.insert(0, '%6.4f' % self.S0)
 
-        self.graph.set_data(self.S1, self.S2)
-        self.graph.set_3d_properties(self.S3)
-        self.line.set_data(self.S1[[self.np0, self.np1]], self.S2[[self.np0, self.np1]])
-        self.line.set_3d_properties(self.S3[[self.np0, self.np1]])
+        if len(self.S1) != 0:
+            self.graph.set_data(self.S1, self.S2)
+            self.graph.set_3d_properties(self.S3)
+            self.line.set_data(self.S1[[self.np0, self.np1]], self.S2[[self.np0, self.np1]])
+            self.line.set_3d_properties(self.S3[[self.np0, self.np1]])
 
         self.ellSOP_ent.delete(0,"end")
         self.ellSOP_ent.insert(0, '%6.3f' % (self.avgell*180/np.pi) + u'\u00B0')
