@@ -54,8 +54,8 @@ def buffer_clear():
     received_data.clear()
 
 # # Start the threads
-othread = octavethread.OctaveThread()
-sthread = ServerThread()
+# othread = octavethread.OctaveThread()
+# sthread = ServerThread()
 
 ################ Run server end ###################
 ###################################################
@@ -216,7 +216,7 @@ class App(tk.Frame):
         lbl = tk.Label(Listbox_frm, text='I_opt/cal\n (kA)')
         lbl.grid(row=3, column=3)
         self.Ical_ent = tk.Entry(Listbox_frm, width=8, justify='right')
-        self.Ical_ent.insert(0, '40')
+        self.Ical_ent.insert(0, '80')
         self.Ical_ent.grid(row=4, column=3)
 
         # FOCS response
@@ -275,7 +275,7 @@ class App(tk.Frame):
         self.OptSet_btn.grid(row=3, column=2, sticky="ew")
         self.Cal_btn = tk.Button(frm1_1, height=2,
                                  wraplength=80, text='Calibration',
-                                 command=lambda: threading.Thread(target=self.run_cal).start())
+                                 command=lambda: threading.Thread(target=self.on_click_calibration).start())
         self.Cal_btn.grid(row=4, column=1, sticky="ew", columnspan=2)
 
 
@@ -352,13 +352,44 @@ class App(tk.Frame):
         self.FOCSresponse = 0
         self.np0 = 0
         self.np1 = 0
+    def on_click_calibration(self):
+        self.lb_in_SOP.insert(0, self.nextinputSOP_ent.get())
+        if float(self.deltaSOP_ent.get()) == 0.0:
+            self.lb_d_SOP.insert(0, 0)
+        else:
+            self.lb_d_SOP.insert(0, float(self.deltaSOP_ent.get()[:-2]))
+        self.lb_Ical.insert(0, float(self.Ical_ent.get()))
+        self.lb_FOCSresponse.insert(0, self.FOCSresponse_ent.get())
+
+        num_calibration = len(self.lb_in_SOP.get(0, "end"))
+        print(num_calibration, "/20")
+        self.info_ent.delete("1.0", "end")
+        self.info_ent.insert("1.0", ("%5d/20" % num_calibration))
+        if int(len(self.lb_in_SOP.get(0, "end"))) > 20:
+            log_data = {'inputSOP': self.lb_in_SOP.get(0, "end")[::-1],
+                        'deltaSOP': self.lb_d_SOP.get(0, "end")[::-1],
+                        'Ical': self.lb_Ical.get(0, "end")[::-1],
+                        'FOCSresponse': self.lb_FOCSresponse.get(0, "end")[::-1]}
+            tmp = np.asarray(self.lb_FOCSresponse.get(0, "end")[::-1], 'float')
+            c_Verdet = tmp.mean()
+            self.info_ent.delete("1.0", "end")
+            self.info_ent.insert("1.0", ("Calibrated Verdet constant = %5.4f (deg/kA)" % c_Verdet))
+            print("Calibrated Verdet constant = ", c_Verdet, "(rad/kA)")
+            print("Calibrated Verdet constant = ", c_Verdet*180/np.pi, "(deg/kA)")
+            df = pd.DataFrame(log_data, columns=['inputSOP', 'deltaSOP', 'Ical', 'FOCSresponse'])
+            df.to_csv("calibration_log.csv")
+            self.nextinputSOP_ent.delete(0, "end")
+            self.nextinputSOP_ent.insert(0, 0.0)
+            self.lb_in_SOP.delete(0, "end")
+            self.lb_d_SOP.delete(0, "end")
+            self.lb_Ical.delete(0, "end")
+            self.lb_FOCSresponse.delete(0, "end")
+
     def on_click_quit(self):
         #todo create quit function
         self.destroy()
         self.quit()
     def on_click_fullscan(self):
-
-
         self.lb_in_SOP.insert(0, self.nextinputSOP_ent.get())
         self.lb_d_SOP.insert(0, float(self.deltaSOP_ent.get()[:-2]))
         self.lb_Ical.insert(0, float(self.Ical_ent.get()))
