@@ -204,7 +204,7 @@ class App(tk.Frame):
         lbl = tk.Label(Listbox_frm, text=u'\u0394' + 'SOP\n (deg)')
         lbl.grid(row=3, column=2)
         self.deltaSOP_ent = tk.Entry(Listbox_frm, width=8, justify='right')
-        self.deltaSOP_ent.insert(0, '0')
+        self.deltaSOP_ent.insert(0, '0'+ u'\u00B0')
         self.deltaSOP_ent.grid(row=4, column=2)
 
         # VS3 coil current for optimization/calibration
@@ -352,12 +352,19 @@ class App(tk.Frame):
         self.FOCSresponse = 0
         self.np0 = 0
         self.np1 = 0
+
+    # def bindings(self):
+        # self.Set_btn.bind('<Enter>', lambda event: self.on_click_set())
+        # self.QUIT_btn.bind('<k>', lambda event: print("xx"))
     def on_click_calibration(self):
         self.lb_in_SOP.insert(0, self.nextinputSOP_ent.get())
-        if float(self.deltaSOP_ent.get()) == 0.0:
+        if float(self.deltaSOP_ent.get()[:-1]) == 0.0:
             self.lb_d_SOP.insert(0, 0)
         else:
-            self.lb_d_SOP.insert(0, float(self.deltaSOP_ent.get()[:-2]))
+            self.lb_d_SOP.insert(0, float(self.deltaSOP_ent.get()[:-1]))
+            self.FOCSresponse_ent.delete(0,"end")
+            self.FOCSresponse_ent.insert(0, '%7.4f' % (float(self.deltaSOP_ent.get()[:-1])/float(self.Ical_ent.get())))
+
         self.lb_Ical.insert(0, float(self.Ical_ent.get()))
         self.lb_FOCSresponse.insert(0, self.FOCSresponse_ent.get())
 
@@ -529,6 +536,9 @@ class App(tk.Frame):
         return ax
 
     def on_click_set(self):
+        self.FOCSresponse_ent.delete(0, "end")
+        self.FOCSresponse_ent.insert(0, '%7.4f' % ((self.L.max() * 180 / np.pi) / float(self.Ical_ent.get())))
+
         #self.inputSOP = self.inputSOP_ent.get()
         self.inputSOP = self.nextinputSOP_ent.get()
         self.lb_in_SOP.insert(0, self.inputSOP)
@@ -557,14 +567,16 @@ class App(tk.Frame):
         tmp_list_x = self.lb_in_SOP.get(0,"end")
         tmp_list_y = self.lb_FOCSresponse.get(0,"end")
 
+        print("actual value of input SOP ", x_tmp, "deg")
+        if x_tmp < 0:
+            x_tmp = x_tmp + 360
+        print("next azimuth of input SOP is", x_tmp, "deg")
+
         for nn, item in enumerate(tmp_list_x):
             if float(item) == x_tmp:
                 print('ingored the same value of input SOP',x_tmp)
                 return -float(tmp_list_y[nn])
 
-        print("next azimuth of input SOP is", x_tmp, "deg")
-        if x_tmp < 0:
-            x_tmp = x_tmp + 360
         # self.nextinputSOP_ent.config(state='enabled')
         self.nextinputSOP_ent.delete(0, "end")
         self.nextinputSOP_ent.insert(0, x_tmp)
