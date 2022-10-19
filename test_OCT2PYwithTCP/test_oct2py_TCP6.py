@@ -54,8 +54,8 @@ def buffer_clear():
     received_data.clear()
 
 # # Start the threads
-# othread = octavethread.OctaveThread()
-# sthread = ServerThread()
+othread = octavethread.OctaveThread()
+sthread = ServerThread()
 
 ################ Run server end ###################
 ###################################################
