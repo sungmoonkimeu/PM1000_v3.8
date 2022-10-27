@@ -16,7 +16,7 @@ filename_fullscan = ["./SCK_PC-45_Stokeslog/Fullscan_log.csv"]
 filename_opti = ["optimization_log_3_PC-45.csv"]
 
 fig, ax = plt.subplots(figsize=(5,4))
-fig.canvas.manager.window.geometry("+1920+0")
+#fig.canvas.manager.window.geometry("+1920+0")
 plt.subplots_adjust(right=0.87)
 
 nn = 0
@@ -55,28 +55,28 @@ ax2=ax.twinx()
 ax2.set(ylim=(0, 85*np.pi/180))
 ax2.set_ylabel('FOCS response (rad/MA)', labelpad=10)
 
-
-filename_Stokes = ["Stokes.csv", "Stokes_mod0.csv", "Stokes_pulse.csv"]
-df = pd.read_csv(filename_Stokes[1], header=None)
-s1, s2, s3 = df[0], df[1], df[2]
-
-fig, ax = plt.subplots(3,1,figsize=(5,4))
-plt.subplots_adjust(left=0.23, right=0.95)
-
-fig.canvas.manager.window.geometry("+1920+0")
-# plt.subplots_adjust(right=0.87)
-data_n = np.linspace(1,len(s1),num=len(s1))
-ax[0].plot(data_n, s1)
-ax[0].set_xticks([])
-ax[0].set_ylabel('s1')
-ax[0].set(xlim=(0,10000))
-ax[1].plot(data_n, s2)
-ax[1].set_xticks([])
-ax[1].set_ylabel('s2')
-ax[1].set(xlim=(0,10000))
-ax[2].plot(data_n, s3)
-ax[2].set_ylabel('s3')
-ax[2].set(xlim=(0,10000),ylim=(-1,-0.975))
-ax[2].set_xlabel('data number')
-fig.align_ylabels(ax)
+#
+# filename_Stokes = ["Stokes.csv", "Stokes_mod0.csv", "Stokes_pulse.csv"]
+# df = pd.read_csv(filename_Stokes[1], header=None)
+# s1, s2, s3 = df[0], df[1], df[2]
+#
+# fig, ax = plt.subplots(3,1,figsize=(5,4))
+# plt.subplots_adjust(left=0.23, right=0.95)
+#
+# #fig.canvas.manager.window.geometry("+1920+0")
+# # plt.subplots_adjust(right=0.87)
+# data_n = np.linspace(1,len(s1),num=len(s1))
+# ax[0].plot(data_n, s1)
+# ax[0].set_xticks([])
+# ax[0].set_ylabel('s1')
+# ax[0].set(xlim=(0,10000))
+# ax[1].plot(data_n, s2)
+# ax[1].set_xticks([])
+# ax[1].set_ylabel('s2')
+# ax[1].set(xlim=(0,10000))
+# ax[2].plot(data_n, s3)
+# ax[2].set_ylabel('s3')
+# ax[2].set(xlim=(0,10000),ylim=(-1,-0.975))
+# ax[2].set_xlabel('data number')
+# fig.align_ylabels(ax)
 plt.show()
